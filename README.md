@@ -142,11 +142,6 @@ todo clear
 todo clear urgent
 ```
 
-Configuration
--------------
-
-- Run `todo personalize` to edit color keys such as `background`, `title1`, `title2`, `urgent`, and `scheduled`.
-
 Credit
 =====================
 
