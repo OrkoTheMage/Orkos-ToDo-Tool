@@ -1,5 +1,5 @@
-Orko's Todo Tool
------------------
+Orko's To-Do Tool
+=====================
 
 ![Main view](docs/screenshots/Maintodo.png)
 
@@ -22,8 +22,8 @@ Features
 
 ![Scheduled view](docs/screenshots/Scheduledtodo.png)
 
-Personalization
----------------
+Personalization [WIP]
+--------------------
 
 Customize colors and highlight behavior with `todo personalize`. You can set background, title, urgent, and scheduled colors using named colors, hex values, or SGR codes. Personalization is stored in `~/.todos_config.json` so your settings follow you between sessions.
 
@@ -107,6 +107,6 @@ Configuration
 - Run `todo personalize` to edit color keys such as `background`, `title1`, `title2`, `urgent`, and `scheduled`.
 
 Credit
-------
+=====================
 
 Aeryn G (OrkoTheMage)
