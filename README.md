@@ -4,6 +4,15 @@ Orko's Todo Tool
 ![Main view](docs/screenshots/Maintodo.png)
 
 A small, terminal-first todo list CLI with styled, readable output. Designed for quick keyboard-driven workflows: add items, mark urgent, schedule tasks, update entries, and personalize the visual style to match your terminal.
+Orko's Todo Tool
+=================
+
+Section 1 — Overview
+---------------------
+
+![Main view](docs/screenshots/Maintodo.png)
+
+A small, terminal-first todo list CLI with styled, readable output. Designed for quick keyboard-driven workflows: add items, mark urgent, schedule tasks, update entries, and personalize the visual style to match your terminal.
 
 Features
 --------
@@ -21,6 +30,9 @@ Personalization
 Customize colors and highlight behavior with `todo personalize`. You can set background, title, urgent, and scheduled colors using named colors, hex values, or SGR codes. Personalization is stored in `~/.todos_config.json` so your settings follow you between sessions.
 
 ![Personalize view](docs/screenshots/Personalizetodo.png)
+
+Section 2 — Installation & Usage
+--------------------------------
 
 Installation
 ------------
@@ -86,6 +98,9 @@ todo list
 todo add "Buy groceries"
 todo update 2 "Buy milk and eggs"
 todo remove 2
+todo urgent 1
+todo scheduled
+todo personalize background "#1e90ff"
 ```
 
 Configuration
@@ -96,4 +111,4 @@ Configuration
 Credit
 ------
 
-Orko's Todo Tool — a compact, terminal-first todo CLI.
+Aeryn G (OrkoTheMage)
