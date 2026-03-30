@@ -1,14 +1,12 @@
 Orko's Todo Tool
-=================
+-----------------
 
 ![Main view](docs/screenshots/Maintodo.png)
 
 A small, terminal-first todo list CLI with styled, readable output. Designed for quick keyboard-driven workflows: add items, mark urgent, schedule tasks, update entries, and personalize the visual style to match your terminal.
-Orko's Todo Tool
-=================
 
 Section 1 — Overview
----------------------
+=====================
 
 ![Main view](docs/screenshots/Maintodo.png)
 
@@ -32,7 +30,7 @@ Customize colors and highlight behavior with `todo personalize`. You can set bac
 ![Personalize view](docs/screenshots/Personalizetodo.png)
 
 Section 2 — Installation & Usage
---------------------------------
+===============================
 
 Installation
 ------------
