@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# storage.py - functions for loading/saving todos and resolving identifiers
+
 import os
 import json
 import tempfile
@@ -22,6 +23,9 @@ def resolve_todo_identifier(identifier, todos, cutoff=0.6):
     if not texts:
         return None
 
+    # First, try simple substring matches (case-insensitive). If there is
+    # exactly one match we return it; if multiple matches occur we return
+    # the first one (caller may present choices in other flows).
     subs = [i for i, txt in enumerate(texts) if identifier.lower() in txt.lower()]
     if len(subs) == 1:
         return subs[0]
@@ -30,6 +34,9 @@ def resolve_todo_identifier(identifier, todos, cutoff=0.6):
 
     best_idx = None
     best_score = 0.0
+    # Fall back to fuzzy matching (difflib). We compute similarity scores
+    # against each todo text and accept the best match if it meets the
+    # provided cutoff threshold.
     for i, txt in enumerate(texts):
         score = difflib.SequenceMatcher(None, identifier.lower(), txt.lower()).ratio()
         if score > best_score:
@@ -58,6 +65,8 @@ def parse_days_arg(s):
         'fri': 'friday', 'friday': 'friday', 'sat': 'saturday', 'saturday': 'saturday',
         'sun': 'sunday', 'sunday': 'sunday'
     }
+    # Normalize comma-separated parts and map common abbreviations to
+    # full weekday names. Remove duplicates while preserving order.
     parts = [p.strip().lower() for p in s.split(',') if p.strip()]
     out = []
     for p in parts:
@@ -100,6 +109,7 @@ def save_todos(todos):
         os.makedirs(dname, exist_ok=True)
     except Exception:
         pass
+    # Atomic write: write to temp file then replace the target path
     fd, tmp = tempfile.mkstemp(prefix='.todos.', dir=dname)
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as f:

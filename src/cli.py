@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# cli.py - entry point for the command-line interface
+
 import os
 import sys
 
@@ -8,7 +9,6 @@ if here not in sys.path:
     sys.path.insert(0, here)
 
 from main import main
-
 
 if __name__ == '__main__':
     main()

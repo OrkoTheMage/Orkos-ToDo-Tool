@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# display.py - functions for displaying todo lists in the terminal
+
 from colors import load_style
 
 
@@ -13,6 +14,10 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
     width = max(min_content, len(plain_title), (len(date) if date else 0), *(len(s) for s in display_lines))
     inner_w = width + PAD * 2
 
+    # Two display modes:
+    # - Modern: `style` is a dict with pre-built ANSI sequences (preferred).
+    # - Legacy: `style` is a tuple with numeric codes (kept for backward compatibility).
+    # Prefer the dict-based rendering when available for richer visuals.
     style = load_style()
     if isinstance(style, dict) and style.get('styled'):
         BG = style.get('BG', '')
@@ -42,12 +47,16 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
         else:
             print(f"{BFG}{BG}├{hbar}┤{RST}")
 
+        # `RESET_BG` is used to replace any embedded reset sequences in
+        # item text so the background remains consistent for the full line.
         RESET_BG = RST + BG
         RED = '\033[91m'
         for li, ln in enumerate(display_lines):
             orig = plain_lines[li]
             day_label = day_labels[li] if li < len(day_labels) else None
             is_urgent = li in urgent_set
+            # `ln_safe` protects embedded reset sequences so the background
+            # remains consistent across the printed line.
             ln_safe = ln.replace(RST, RESET_BG)
             if is_urgent:
                 colored = f"{RED}{ln_safe}{RST}{BG}"
@@ -58,6 +67,7 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
                     colored = base_safe + ' ' + day_part
                 else:
                     colored = ln_safe
+            # Pad based on the raw visible length to keep the box aligned.
             padded = sp + colored + (' ' * (width - len(ln))) + sp
             print(f"{BFG}{BG}│{RST}{BG}{padded}{RST}{BFG}{BG}│{RST}")
 
@@ -68,6 +78,7 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
     nf_title_color, nf_index_color, nf_bold = style
     RESET = '\033[0m'
 
+    # Legacy helper: map numeric indices to simple SGR color codes.
     def nf_color(code, bold=False):
         mapping = {
             0: 30, 1:31, 2:32, 3:33, 4:34, 5:35, 6:36, 7:37,
@@ -125,6 +136,8 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
                     colored = '\033[93m' + ln + RESET
                 else:
                     colored = ln
+        # `visible_len` reflects the printed text length (without ANSI codes)
+        # and is used to compute padding so the surrounding box stays aligned.
         visible_len = len(ln)
         padded = (' ' * PAD) + colored + (' ' * PAD)
         print('|' + padded.ljust(inner_w + (len(padded) - (visible_len + PAD*2))) + '|')
@@ -140,13 +153,11 @@ def _prefix_and_space(lines, day_labels, urgent_set):
     spaced_day_labels = []
     spaced_urgent_set = set()
     for i, ln in enumerate(lines):
-        # prefix
         pref = f"- {ln}"
         spaced_lines.append(pref)
         spaced_day_labels.append(day_labels[i] if day_labels and i < len(day_labels) else None)
         if urgent_set and i in urgent_set:
             spaced_urgent_set.add(len(spaced_lines) - 1)
-        # spacer
         spaced_lines.append("")
         spaced_day_labels.append(None)
     return spaced_lines, spaced_day_labels, spaced_urgent_set

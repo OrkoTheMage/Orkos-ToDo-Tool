@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# config.py - functions for loading/saving personalization settings
+
 import os
 import json
 import tempfile
@@ -29,6 +30,8 @@ def save_personalization(d):
         os.makedirs(dname, exist_ok=True)
     except Exception:
         pass
+    # Write to a temp file and atomically replace the target to avoid
+    # corrupting the config if the process is interrupted.
     fd, tmp = tempfile.mkstemp(prefix='.todos_config.', dir=dname)
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as f:

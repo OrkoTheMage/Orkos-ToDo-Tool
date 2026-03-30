@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
-import argparse
+# main.py - Main fuction & command implementations 
+
 import os
 import sys
+from cli_args import parse_args, __version__
 
 from display import print_box, _prefix_and_space
 from config import config_path, load_personalization, save_personalization
@@ -11,17 +12,16 @@ from storage import (
 )
 
 
-# ── Commands ───────────────────────────────────────────────
-
 def list_cmd(args):
     from datetime import datetime as _dt
     date_str = _dt.now().strftime('%A, %B %d, %Y')
     title = 'To-Do List'
+    # Load stored todos and filter by today's name when scheduling is used
     todos = load_todos()
     today = _dt.now().strftime('%A').lower()
 
-    # Visible todos are those with no schedule or scheduled for today.
     visible = []
+    # If an item has `days` set, show it only on those days; otherwise it's visible.
     for t in todos:
         days = t.get('days') or []
         if days and today not in [d.lower() for d in days]:
@@ -45,6 +45,8 @@ def list_cmd(args):
     regular = []
     regular_labels = []
 
+    # Partition visible todos into buckets so urgent and scheduled items
+    # are shown before regular ones and labels are prepared for display.
     for t in visible:
         days = t.get('days') or []
         marker = ' [!]' if t.get('urgent') else ''
@@ -68,6 +70,7 @@ def list_cmd(args):
 
     lines = urgent_daily + urgent_regular + daily + regular
     day_labels = urgent_daily_labels + urgent_regular_labels + daily_labels + regular_labels
+    # Mark indexes of urgent items so the display can highlight them.
     urgent_set = set(range(len(urgent_daily) + len(urgent_regular)))
     spaced_lines, spaced_day_labels, spaced_urgent_set = _prefix_and_space(lines, day_labels, urgent_set)
     print_box(title, spaced_lines, date=date_str, show_header=True, urgent_set=spaced_urgent_set, day_labels=spaced_day_labels)
@@ -94,6 +97,8 @@ def update_cmd(args):
         test_i = int(ident)
         idx = resolve_todo_identifier(ident, todos)
     except Exception:
+        # If not numeric, try to find matching todo texts. If multiple
+        # matches are found we prompt the user to choose one.
         matches = find_matching_indices(ident, todos)
         if len(matches) > 1:
             print('Multiple matches found:')
@@ -145,6 +150,7 @@ def remove_cmd(args):
         test_i = int(ident)
         idx = resolve_todo_identifier(ident, todos)
     except Exception:
+        # Non-numeric removal: offer choices when multiple candidates match.
         matches = find_matching_indices(ident, todos)
         if len(matches) > 1:
             print('Multiple matches found:')
@@ -278,33 +284,43 @@ def scheduled_cmd(args):
     if day_filter:
         scheduled = [t for t in scheduled if day_filter in [d.lower() for d in t.get('days', [])]]
 
-    # Secondary title for scheduled view (Monday - Sunday) shown in cyan
     date_str = 'Monday - Sunday'
 
     if not scheduled:
-        # Show styled UI even when there are no scheduled todos
         lines = ['Jobs done, nothing scheduled right now!']
         print_box('Scheduled To-Do List', lines, date=date_str, show_header=True, urgent_set=set(), day_labels=[])
         return
 
+    week_order = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    def earliest_day_index(t):
+        days = [d.lower() for d in t.get('days', [])]
+        if not days:
+            return 7
+        inds = [week_order.index(d) for d in days if d in week_order]
+        return min(inds) if inds else 7
+
+    scheduled_with_index = list(enumerate(scheduled))
+    scheduled_sorted = [t for i, t in sorted(scheduled_with_index, key=lambda it: (earliest_day_index(it[1]), it[0]))]
+
     lines = []
     day_labels = []
-    for t in scheduled:
+    for t in scheduled_sorted:
         marker = ' [!]' if t.get('urgent') else ''
-        labels = [d[:3].title() for d in t.get('days', [])]
+        days_raw = [d.lower() for d in t.get('days', [])]
+        days_sorted = sorted(days_raw, key=lambda x: week_order.index(x) if x in week_order else 7)
+        labels = [d[:3].title() for d in days_sorted]
         label = '/'.join(labels) if labels else None
         lines.append(f"{t.get('text','')}{marker}")
         day_labels.append(label)
 
     urgent_set = set(i for i, t in enumerate(scheduled) if t.get('urgent'))
     spaced_lines, spaced_day_labels, spaced_urgent_set = _prefix_and_space(lines, day_labels, urgent_set)
-    print_box('Scheduled Todos', spaced_lines, date=date_str, show_header=True, urgent_set=spaced_urgent_set, day_labels=spaced_day_labels)
+    print_box('Scheduled To-Do List', spaced_lines, date=date_str, show_header=True, urgent_set=spaced_urgent_set, day_labels=spaced_day_labels)
 
 
 def personalize_cmd(args):
     key = (args.key or '').strip().lower()
     color = args.color
-    # Support resetting to defaults
     if key == 'default':
         pth = config_path()
         try:
@@ -314,10 +330,11 @@ def personalize_cmd(args):
             pass
         print('Personalization reset to defaults.')
         return
-    # If the user typed an unquoted hex like #1e90ff the shell may drop it as a comment
     if color is None:
         print("Color missing. If using a hex value start with # and quote or escape it, e.g. \"#1e90ff\" or '1e90ff'.")
         return
+    # Map friendly keys to stored personalization keys and whether they
+    # represent a background color (which uses a blended background).
     allowed = {
         'background': ('BG', True),
         'title1': ('MAG', False),
@@ -330,6 +347,7 @@ def personalize_cmd(args):
         print('Unknown key. Allowed:', ', '.join(allowed.keys()))
         return
     tgt, is_bg = allowed[key]
+    # Parse user-provided color string into an SGR/ANSI sequence
     seq = _parse_color_value(color, is_bg=is_bg)
     if not seq:
         print('Failed to parse color:', color, 'try named colors (red, bright_blue), hex (#1e90ff), or raw SGR (e.g. 91 or 38;2;R;G;B).')
@@ -339,54 +357,6 @@ def personalize_cmd(args):
     save_personalization(cfg)
     print(f"Saved {key} -> {color}")
 
-
-def parse_args():
-    p = argparse.ArgumentParser(prog='todo', usage='todo [arg] (i.e list | add | update | remove)', description='Simple todo CLI')
-    sub = p.add_subparsers(dest='cmd')
-
-    sub.add_parser('list', aliases=['l', 'ls'], prog='todo list', help='List todos')
-
-    pa = sub.add_parser('add', aliases=['a'], prog='todo add', help='Add a todo')
-    pa.add_argument('text', nargs='+', help='Todo text')
-    pa.add_argument('-u', '--urgent', action='store_true', help='Flag as urgent')
-    pa.add_argument('-d', '--days', help='Comma-separated days (Mon,Tue or monday)')
-
-    pu = sub.add_parser('update', aliases=['u'], prog='todo update', help='Update a todo by id or text')
-    pu.add_argument('id', help='Todo id (from list) or text fragment')
-    pu.add_argument('text', nargs='+', help='New todo text')
-    pu.add_argument('-d', '--days', help='Comma-separated days (Mon,Tue or monday)')
-
-    pr = sub.add_parser('remove', aliases=['r'], prog='todo remove', help='Remove a todo by id or text')
-    pr.add_argument('id', help='Todo id (from list) or text fragment')
-
-    pur = sub.add_parser('urgent', prog='todo urgent', help='Toggle urgent flag on a todo')
-    pur.add_argument('id', help='Todo id (from list) or text fragment')
-
-    pc = sub.add_parser('clear', aliases=['c'], prog='todo clear', help='Clear todos')
-    pc.add_argument('scope', nargs='?', choices=['unflagged', 'urgent', 'scheduled'],
-                    help='Optional scope to clear: unflagged, urgent, or scheduled')
-
-    ps = sub.add_parser('scheduled', aliases=['s'], prog='todo scheduled', help='Show scheduled todos')
-    ps.add_argument('-d', '--day', help='Filter scheduled todos by day (Mon,Tue or monday)')
-
-    pp = sub.add_parser('personalize', prog='todo personalize', help='Personalize colors')
-    pp.add_argument('key', help='Which element to personalize (background,title1,title2,urgent,scheduled,text) or "default" to reset')
-    pp.add_argument('color', nargs='?', help='Color value (name, #rrggbb, or SGR code)')
-
-    args = p.parse_args()
-    # Normalize shorthand aliases to canonical command names so callers
-    # can compare against the canonical names (e.g. 'list', 'add').
-    alias_map = {
-        'l': 'list', 'ls': 'list',
-        'a': 'add',
-        'u': 'update',
-        'r': 'remove',
-        'c': 'clear',
-        's': 'scheduled',
-    }
-    if getattr(args, 'cmd', None) in alias_map:
-        args.cmd = alias_map[args.cmd]
-    return args
 
 
 def main():
@@ -415,5 +385,4 @@ def main():
 
 __all__ = ['main']
 
-# Package version
-__version__ = '0.1.0'
+__version__ = '0.2.0'

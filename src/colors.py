@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+# colors.py - functions for parsing color specifications and loading styles
+
 from config import load_personalization
 
 
@@ -13,21 +14,21 @@ def _parse_color_value(val, is_bg=False):
     if not val:
         return ''
     v = val.strip().lower()
-    # named colors mapping (foreground)
     names = {
         'black':'30','red':'31','green':'32','yellow':'33','blue':'34','magenta':'35','cyan':'36','white':'37',
         'bright_black':'90','bright_red':'91','bright_green':'92','bright_yellow':'93','bright_blue':'94','bright_magenta':'95','bright_cyan':'96','bright_white':'97'
     }
     if v in ('reset','rst','0'):
         return '\033[0m'
-    # helper: blend user rgb toward base background for low opacity
+
     def _blend_to_base(user_rgb, alpha=0.35, base_rgb=(70, 60, 70)):
+        # Blend a user-specified RGB towards a darker base so background
+        # colors remain readable when used as terminal backgrounds.
         r = int(user_rgb[0] * alpha + base_rgb[0] * (1 - alpha))
         g = int(user_rgb[1] * alpha + base_rgb[1] * (1 - alpha))
         b = int(user_rgb[2] * alpha + base_rgb[2] * (1 - alpha))
         return (r, g, b)
 
-    # map named SGR codes to approximate RGBs for blending
     name_to_rgb = {
         'black': (0,0,0),'red': (205,49,49),'green': (13,188,121),'yellow': (229,229,16),
         'blue': (36,114,200),'magenta': (188,63,188),'cyan': (17,168,205),'white': (229,229,229),
@@ -37,8 +38,9 @@ def _parse_color_value(val, is_bg=False):
 
     if v in names:
         code = names[v]
-        # for background, produce a blended truecolor escape
         if is_bg:
+            # For background colors prefer an RGB blend for nicer blocks
+            # otherwise fall back to the simple SGR background code.
             rgb = name_to_rgb.get(v)
             if rgb:
                 br, bgc, bb = _blend_to_base(rgb)
@@ -51,8 +53,8 @@ def _parse_color_value(val, is_bg=False):
                 bg_code = base + 10
                 return f"\033[{bg_code}m"
         return f"\033[{code}m"
-    # hex color
-    # accept either '#rrggbb' or 'rrggbb'
+
+    # Accept both `#rrggbb` and bare `rrggbb` hex formats.
     if (v.startswith('#') and len(v) == 7) or (len(v) == 6 and all(c in '0123456789abcdef' for c in v)):
         try:
             if v.startswith('#'):
@@ -63,15 +65,18 @@ def _parse_color_value(val, is_bg=False):
                 r = int(v[0:2], 16)
                 g = int(v[2:4], 16)
                 b = int(v[4:6], 16)
+            # Hex colors: use 24-bit SGR sequences. For background, blend
+            # the color slightly towards the base for improved contrast.
             if is_bg:
                 br, bgc, bb = _blend_to_base((r,g,b))
                 return f"\033[48;2;{br};{bgc};{bb}m"
             return f"\033[38;2;{r};{g};{b}m"
         except Exception:
             pass
-    # raw sgr numeric or 38;2/48;2 form
+
+    # Accept SGR-like raw specifications such as "38;2;R;G;B" or "38;5;n"
+    # and also allow passing them directly.
     if ';' in v:
-        # handle truecolor specs like 38;2;r;g;b or 48;2;r;g;b
         parts = v.split(';')
         try:
             if len(parts) >= 5 and parts[0] in ('38', '48') and parts[1] == '2':
@@ -82,21 +87,21 @@ def _parse_color_value(val, is_bg=False):
                     br, bgc, bb = _blend_to_base((r, g, b))
                     return f"\033[48;2;{br};{bgc};{bb}m"
                 return f"\033[38;2;{r};{g};{b}m"
-            # handle 256-color form: 38;5;N or 48;5;N
             if len(parts) >= 3 and parts[0] in ('38', '48') and parts[1] == '5':
                 n = int(parts[2])
                 if 0 <= n <= 255:
-                    # convert foreground->background when requested
                     if is_bg and parts[0] == '38':
                         return f"\033[48;5;{n}m"
                     return f"\033[{v}m"
         except Exception:
             return ''
         return ''
+
+    # Numeric SGR codes (e.g. 31, 91) are also supported and mapped to
+    # either foreground or blended background sequences depending on context.
     if v.isdigit():
         try:
             num = int(v)
-            # map numeric SGR to RGB when making background
             sgr_to_rgb = {
                 30: (0,0,0),31:(205,49,49),32:(13,188,121),33:(229,229,16),34:(36,114,200),35:(188,63,188),36:(17,168,205),37:(229,229,229),
                 90:(102,102,102),91:(255,85,85),92:(75,255,150),93:(255,255,85),94:(85,153,255),95:(255,125,255),96:(85,255,255),97:(255,255,255)
@@ -109,24 +114,21 @@ def _parse_color_value(val, is_bg=False):
             return f"\033[{num}m"
         except Exception:
             return f"\033[{v}m"
-    # fallback: invalid color specification
     return ''
 
 
 def load_style():
-    # Default style values
     defaults = {
         'BG': '\033[48;2;70;60;70m',
         'BFG': '\033[38;2;125;125;125m',
         'ART': '\033[1;37m',
-        'MAG': '\033[1;35m',  # title1
+        'MAG': '\033[1;35m',
         'RST': '\033[0m',
-        'CYN': '\033[1;36m',  # title2 / date
+        'CYN': '\033[1;36m',
         'YEL': '\033[93m',
         'RED': '\033[91m',
         'styled': True,
     }
-    # Load any personalized overrides from config
     try:
         cfg = load_personalization()
         if cfg:
