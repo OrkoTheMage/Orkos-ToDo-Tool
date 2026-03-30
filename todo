@@ -1,25 +1,16 @@
-#!/usr/bin/env python3
-import os
+#!/usr/bin/python3
 import sys
+import os
 
-# Ensure the package directory is on sys.path so imports work when running
+# Make running from the project root work by adding `src/` to sys.path
 here = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-if here not in sys.path:
-    sys.path.insert(0, here)
+srcdir = os.path.join(here, 'src')
+if srcdir not in sys.path:
+    sys.path.insert(0, srcdir)
 
-try:
-    from orkos_todo_tool import main
-except Exception:
-    import importlib.util
-    init_path = os.path.join(here, "__init__.py")
-    if os.path.exists(init_path):
-        spec = importlib.util.spec_from_file_location("orkos_todo_tool", init_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        main = getattr(module, "main")
-    else:
-        raise
-
+from main import main
 
 if __name__ == '__main__':
-    main()
+    if sys.argv[0].endswith('.exe'):
+        sys.argv[0] = sys.argv[0][:-4]
+    sys.exit(main())
