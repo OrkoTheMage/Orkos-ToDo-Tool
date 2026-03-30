@@ -1,10 +1,12 @@
-# Orko's Todo Tool
+Orko's Todo Tool
+=================
 
 ![Main view](docs/screenshots/Maintodo.png)
 
 A small, terminal-first todo list CLI with styled, readable output. Designed for quick keyboard-driven workflows: add items, mark urgent, schedule tasks, update entries, and personalize the visual style to match your terminal.
 
 Features
+--------
 
 - Fast CLI: `list`, `add`, `update`, `remove`, `urgent`, `scheduled`, and `personalize` commands.
 - Styled terminal output with configurable colors and accenting for urgent/scheduled items.
@@ -14,12 +16,14 @@ Features
 ![Scheduled view](docs/screenshots/Scheduledtodo.png)
 
 Personalization
+---------------
 
 Customize colors and highlight behavior with `todo personalize`. You can set background, title, urgent, and scheduled colors using named colors, hex values, or SGR codes. Personalization is stored in `~/.todos_config.json` so your settings follow you between sessions.
 
 ![Personalize view](docs/screenshots/Personalizetodo.png)
 
 Installation
+------------
 
 Quick install (recommended):
 
@@ -40,6 +44,7 @@ pip install --user git+https://github.com/<yourname>/orkos-todo-tool.git
 ```
 
 Running from source
+-------------------
 
 Run the CLI script directly from the project root when developing or trying changes:
 
@@ -48,6 +53,7 @@ python3 todo list
 ```
 
 Make `todo` available on your PATH
+---------------------------------
 
 If you prefer a shortcut instead of installing, symlink the project script:
 
@@ -66,12 +72,14 @@ mv ~/.local/bin/todo ~/.local/bin/todo.orig
 ```
 
 Notes
+-----
 
 - `pyproject.toml` declares the build backend and `setup.cfg` contains package metadata and console entry points — both are part of the source and should be committed.
 - `*.egg-info/` is generated at build/install time and is excluded via `.gitignore`.
 - If you see `ModuleNotFoundError: No module named 'orkos_todo_tool'` when running a symlinked `todo`, ensure the symlink points to the project script or install the package with `pip` so Python can import it.
 
 Usage examples
+--------------
 
 ```bash
 todo list
@@ -81,9 +89,11 @@ todo remove 2
 ```
 
 Configuration
+-------------
 
 - Run `todo personalize` to edit color keys such as `background`, `title1`, `title2`, `urgent`, and `scheduled`.
 
 Credit
+------
 
 Orko's Todo Tool — a compact, terminal-first todo CLI.
