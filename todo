@@ -3,11 +3,22 @@ import os
 import sys
 
 # Ensure the package directory is on sys.path so imports work when running
-here = os.path.dirname(os.path.abspath(__file__))
+here = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 if here not in sys.path:
     sys.path.insert(0, here)
 
-from orkos_todo_tool import main
+try:
+    from orkos_todo_tool import main
+except Exception:
+    import importlib.util
+    init_path = os.path.join(here, "__init__.py")
+    if os.path.exists(init_path):
+        spec = importlib.util.spec_from_file_location("orkos_todo_tool", init_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        main = getattr(module, "main")
+    else:
+        raise
 
 
 if __name__ == '__main__':
