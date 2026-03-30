@@ -145,8 +145,6 @@ todo clear urgent
 Section 3 - Codebase
 =====================
 
-a small, modular CLI: source lives under `src/`. High-level roles:
-
 - argument parsing and entry (`cli_args.py`, `cli.py`)
 - command logic (`main.py`)
 - terminal rendering (`display.py`, `colors.py`)

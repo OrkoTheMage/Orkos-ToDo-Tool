@@ -2,7 +2,9 @@
 
 import os
 import sys
-from cli_args import parse_args, __version__
+from cli_args import parse_args
+
+__version__ = '0.2.0'
 
 from display import print_box, _prefix_and_space
 from config import config_path, load_personalization, save_personalization
