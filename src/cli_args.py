@@ -8,6 +8,7 @@ def parse_args():
     sub = p.add_subparsers(dest='cmd')
 
     sub.add_parser('list', aliases=['l', 'ls'], prog='todo list', help='List todos')
+    sub.add_parser('id', prog='todo id', help='List todos with numeric ids')
 
     pa = sub.add_parser('add', aliases=['a'], prog='todo add', help='Add a todo')
     pa.add_argument('text', nargs='+', help='Todo text')

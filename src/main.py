@@ -5,7 +5,7 @@ import sys
 from datetime import date
 from cli_args import parse_args
 
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 from display import print_box, _prefix_and_space
 from config import config_path, load_personalization, save_personalization
@@ -78,6 +78,34 @@ def list_cmd(args):
     urgent_set = set(range(len(urgent_daily) + len(urgent_regular)))
     spaced_lines, spaced_day_labels, spaced_urgent_set = _prefix_and_space(lines, day_labels, urgent_set)
     print_box(title, spaced_lines, date=date_str, show_header=True, urgent_set=spaced_urgent_set, day_labels=spaced_day_labels)
+
+
+def id_cmd(args):
+    """List all todos with their numeric ids (1-based)."""
+    todos = load_todos()
+    if not todos:
+        lines = ['No todos found.']
+        print_box('To-Do List (IDs)', lines, date=None, show_header=True, urgent_set=set(), day_labels=[])
+        return
+
+    lines = []
+    day_labels = []
+    urgent_set = set()
+    for i, t in enumerate(todos):
+        marker = ' [!]' if t.get('urgent') else ''
+        check_marker = ' [✔]' if t.get('checked') else ''
+        lines.append(f"{i+1}: {t.get('text','')}{marker}{check_marker}")
+        days = t.get('days') or []
+        if days:
+            labels = [d[:3].title() for d in days]
+            day_labels.append('/'.join(labels))
+        else:
+            day_labels.append(None)
+        if t.get('urgent'):
+            urgent_set.add(i)
+
+    spaced_lines, spaced_day_labels, spaced_urgent_set = _prefix_and_space(lines, day_labels, urgent_set)
+    print_box('To-Do List (IDs)', spaced_lines, date=None, show_header=True, urgent_set=spaced_urgent_set, day_labels=spaced_day_labels)
 
 
 def add_cmd(args):
@@ -408,6 +436,8 @@ def main():
         clear_cmd(args)
     elif args.cmd == 'scheduled':
         scheduled_cmd(args)
+    elif args.cmd == 'id':
+        id_cmd(args)
     elif args.cmd == 'personalize':
         personalize_cmd(args)
     else:
