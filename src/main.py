@@ -5,7 +5,7 @@ import sys
 from datetime import date
 from cli_args import parse_args
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 from display import print_box, _prefix_and_space
 from config import config_path, load_personalization, save_personalization
@@ -342,7 +342,10 @@ def scheduled_cmd(args):
     if day_filter:
         scheduled = [t for t in scheduled if day_filter in [d.lower() for d in t.get('days', [])]]
 
-    date_str = 'Monday - Sunday'
+    if day_filter:
+        date_str = day_filter.title()
+    else:
+        date_str = 'Monday - Sunday'
 
     if not scheduled:
         lines = ['Jobs done, nothing scheduled right now!']

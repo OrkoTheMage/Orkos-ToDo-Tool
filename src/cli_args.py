@@ -33,7 +33,8 @@ def parse_args():
                     help='Optional scope to clear: unflagged, urgent, or scheduled')
 
     ps = sub.add_parser('scheduled', aliases=['s'], prog='todo scheduled', help='Show scheduled todos')
-    ps.add_argument('-d', '--day', help='Filter scheduled todos by day (Mon,Tue or monday)')
+    ps.add_argument('day', nargs='?', help='Day name (Mon,Tue or monday)')
+    ps.add_argument('-d', '--day', dest='day', help='Filter scheduled todos by day (Mon,Tue or monday)')
 
     pp = sub.add_parser('personalize', prog='todo personalize', help='Personalize colors')
     pp.add_argument('key', help='Which element to personalize (background,title1,title2,urgent,scheduled,text) or "default" to reset')
