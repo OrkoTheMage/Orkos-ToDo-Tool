@@ -13,7 +13,9 @@ A small, terminal-first todo list CLI with styled, readable output. Designed for
 Features
 --------
 
-- Fast CLI: `list`, `add`, `update`, `remove`, `urgent`, `scheduled`, and `personalize` commands.
+- Fast CLI: `list`, `add`, `update`, `remove`, `urgent`, `scheduled`, `id`, and `personalize` commands.
+- Toggle completion from the CLI: use `-check <id>` and `-uncheck <id>` to mark items checked/unchecked.
+- Day-filtered scheduled view and stable ordering: `todo scheduled <day>` (e.g. `todo scheduled Mon`) shows only that day's scheduled items in a consistent, sorted order.
 - Styled terminal output with configurable colors and accenting for urgent/scheduled items.
 - Simple persistence in a JSON file (`~/.todos.json`) with fuzzy-text lookup for quick updates.
 - Small CLI wrapper (`todo`) with package modules under `src/`, suitable for from-source use and packaging via setuptools.
@@ -137,11 +139,20 @@ todo add -u "Pay electricity bill"
 # Add a todo scheduled for specific days
 todo add -d Mon,Tue "Water the plants"
 
+# Show scheduled todos for a specific day (e.g. Monday)
+todo scheduled Mon
+
+# Print a todo by its numeric id
+todo id 3
+
+# Mark a todo checked / unchecked by id
+todo -check 2
+todo -uncheck 2
+
 # Clear todos (no arg clears all non-urgent/non-scheduled; scopes: unflagged, urgent, scheduled)
 todo clear
 todo clear urgent
 ```
-
 Section 3 - Codebase
 =====================
 
