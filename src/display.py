@@ -10,7 +10,15 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
     urgent_set = urgent_set or set()
     day_labels = day_labels or [None] * len(plain_lines)
     min_content = 32
-    display_lines = [s + (f" [{day_labels[i]}]" if day_labels and day_labels[i] else '') for i, s in enumerate(plain_lines)]
+    display_lines = []
+    check_sub = ' [✔]'
+    for i, s in enumerate(plain_lines):
+        day = day_labels[i] if day_labels and i < len(day_labels) else None
+        has_check = check_sub in s
+        base = s.replace(check_sub, '')
+        base_with_day = base + (f" [{day}]" if day else '')
+        final = base_with_day + (check_sub if has_check else '')
+        display_lines.append(final)
     width = max(min_content, len(plain_title), (len(date) if date else 0), *(len(s) for s in display_lines))
     inner_w = width + PAD * 2
 
@@ -25,8 +33,9 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
         MAG = style.get('MAG', '')
         ART = style.get('ART', '')
         RST = style.get('RST', '\033[0m')
-        YEL = '\033[93m'
+        YEL = style.get('YEL', '\033[93m')
         CYN = style.get('CYN', '\033[1;36m')
+        GRN = style.get('GRN', '\033[92m')
 
         tw = inner_w
         hbar = '─' * tw
@@ -55,19 +64,16 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
             orig = plain_lines[li]
             day_label = day_labels[li] if li < len(day_labels) else None
             is_urgent = li in urgent_set
-            # `ln_safe` protects embedded reset sequences so the background
-            # remains consistent across the printed line.
+            is_checked = '✔' in (orig or '')
             ln_safe = ln.replace(RST, RESET_BG)
+            check_sub = ' [✔]'
+            base_safe = plain_lines[li].replace(check_sub, '').replace(RST, RESET_BG)
+            day_part = (f" {YEL}[{day_label}]{RST}{BG}") if day_label else ''
+            check_part = f" {GRN}[✔]{RST}{BG}" if is_checked else ''
             if is_urgent:
-                colored = f"{RED}{ln_safe}{RST}{BG}"
+                colored = f"{RED}{base_safe}{RST}{BG}{day_part}{check_part}"
             else:
-                if day_label:
-                    base_safe = plain_lines[li].replace(RST, RESET_BG)
-                    day_part = f"{YEL}[{day_label}]{RST}{BG}"
-                    colored = base_safe + ' ' + day_part
-                else:
-                    colored = ln_safe
-            # Pad based on the raw visible length to keep the box aligned.
+                colored = f"{base_safe}{day_part}{check_part}"
             padded = sp + colored + (' ' * (width - len(ln))) + sp
             print(f"{BFG}{BG}│{RST}{BG}{padded}{RST}{BFG}{BG}│{RST}")
 
@@ -106,22 +112,45 @@ def print_box(title, lines, date=None, show_header=True, urgent_set=None, day_la
         print(horiz)
 
     RED_ASC = '\033[91m'
+    GREEN_ASC = '\033[92m'
     for li, ln in enumerate(display_lines):
         is_urgent = li in urgent_set
         day_label = day_labels[li] if li < len(day_labels) else None
         if ': ' in ln:
             idx, rest = ln.split(': ', 1)
             if idx.isdigit():
+                check_sub = ' [✔]'
+                is_checked = check_sub in rest
+                rest_base = rest.replace(check_sub, '')
                 if is_urgent:
-                    colored = RED_ASC + idx + RESET + ': ' + RED_ASC + rest + RESET
-                else:
+                    colored = RED_ASC + idx + RESET + ': ' + RED_ASC + rest_base + RESET
                     if day_label:
-                        colored = INDEX_COLOR + idx + RESET + ': ' + rest
-                        colored = colored + ' ' + '\033[93m' + f"[{day_label}]" + RESET
-                    else:
-                        colored = INDEX_COLOR + idx + RESET + ': ' + rest
+                        colored += ' ' + '\033[93m' + f"[{day_label}]" + RESET
+                    if is_checked:
+                        colored += ' ' + GREEN_ASC + '[✔]' + RESET
+                else:
+                    colored = INDEX_COLOR + idx + RESET + ': ' + rest_base
+                    if day_label:
+                        colored += ' ' + '\033[93m' + f"[{day_label}]" + RESET
+                    if is_checked:
+                        colored += ' ' + GREEN_ASC + '[✔]' + RESET
             else:
-                if is_urgent:
+                is_checked = '✔' in ln
+                check_sub = ' [✔]'
+                base = ln.replace(check_sub, '')
+                if day_label:
+                    base = base.replace(f" [{day_label}]", '')
+                if is_checked:
+                    if is_urgent:
+                        colored = RED_ASC + base + RESET
+                        colored += ' ' + GREEN_ASC + '[✔]' + RESET
+                        if day_label:
+                            colored += ' ' + '\033[93m' + f"[{day_label}]" + RESET
+                    else:
+                        colored = base + ' ' + GREEN_ASC + '[✔]' + RESET
+                        if day_label:
+                            colored += ' ' + '\033[93m' + f"[{day_label}]" + RESET
+                elif is_urgent:
                     colored = RED_ASC + ln + RESET
                 else:
                     if day_label:

@@ -4,6 +4,7 @@ import os
 import json
 import tempfile
 import difflib
+from datetime import date
 
 
 def todos_path():
@@ -93,9 +94,23 @@ def load_todos():
                         txt = t.get('text', '')
                         urgent = bool(t.get('urgent', False))
                         days = t.get('days') or []
-                        out.append({'text': txt, 'urgent': urgent, 'days': days})
+                        checked = bool(t.get('checked', False))
+                        checked_date = t.get('checked_date')
+                        out.append({'text': txt, 'urgent': urgent, 'days': days, 'checked': checked, 'checked_date': checked_date})
                     else:
-                        out.append({'text': t, 'urgent': False, 'days': []})
+                        out.append({'text': t, 'urgent': False, 'days': [], 'checked': False, 'checked_date': None})
+                # Reset scheduled todos' checked state if their checked_date
+                # is not today so they reappear unchecked on subsequent days.
+                today = date.today().isoformat()
+                changed = False
+                for item in out:
+                    if item.get('days') and item.get('checked'):
+                        if item.get('checked_date') != today:
+                            item['checked'] = False
+                            item['checked_date'] = None
+                            changed = True
+                if changed:
+                    save_todos(out)
                 return out
     except Exception:
         return []

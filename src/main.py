@@ -2,9 +2,10 @@
 
 import os
 import sys
+from datetime import date
 from cli_args import parse_args
 
-__version__ = '0.2.0'
+__version__ = '1.1.0'
 
 from display import print_box, _prefix_and_space
 from config import config_path, load_personalization, save_personalization
@@ -52,22 +53,23 @@ def list_cmd(args):
     for t in visible:
         days = t.get('days') or []
         marker = ' [!]' if t.get('urgent') else ''
+        check_marker = ' [✔]' if t.get('checked') else ''
         if days:
             labels = [abbrev.get(d.lower(), d[:3].title()) for d in days]
             label = '/'.join(labels)
         else:
             label = None
         if t.get('urgent') and days:
-            urgent_daily.append(f"{t['text']}{marker}")
+            urgent_daily.append(f"{t['text']}{marker}{check_marker}")
             urgent_daily_labels.append(label)
         elif t.get('urgent'):
-            urgent_regular.append(f"{t['text']}{marker}")
+            urgent_regular.append(f"{t['text']}{marker}{check_marker}")
             urgent_regular_labels.append(label)
         elif days:
-            daily.append(f"{t['text']}{marker}")
+            daily.append(f"{t['text']}{marker}{check_marker}")
             daily_labels.append(label)
         else:
-            regular.append(f"{t['text']}{marker}")
+            regular.append(f"{t['text']}{marker}{check_marker}")
             regular_labels.append(label)
 
     lines = urgent_daily + urgent_regular + daily + regular
@@ -83,7 +85,7 @@ def add_cmd(args):
     text = args.text
     urgent = getattr(args, 'urgent', False)
     days = parse_days_arg(getattr(args, 'days', None))
-    todos.append({'text': text, 'urgent': urgent, 'days': days})
+    todos.append({'text': text, 'urgent': urgent, 'days': days, 'checked': False, 'checked_date': None})
     save_todos(todos)
     label = ' [urgent]' if urgent else ''
     if days:
@@ -138,11 +140,37 @@ def update_cmd(args):
     if idx is None or idx < 0 or idx >= len(todos):
         print(f"No matching todo for: {args.id}")
         return
-    todos[idx]['text'] = args.text
+    # Handle check/uncheck flags: explicit uncheck takes precedence.
+    if getattr(args, 'uncheck', False):
+        todos[idx]['checked'] = False
+        todos[idx]['checked_date'] = None
+        state = 'checked' if todos[idx]['checked'] else 'unchecked'
+        save_todos(todos)
+        print(f"Todo {args.id} marked as {state}")
+        if not getattr(args, 'text', None) and getattr(args, 'days', None) is None:
+            return
+    elif getattr(args, 'check', False):
+        # Toggle checked state; when marking checked, record today's date.
+        new_state = not todos[idx].get('checked', False)
+        todos[idx]['checked'] = new_state
+        if new_state:
+            todos[idx]['checked_date'] = date.today().isoformat()
+        else:
+            todos[idx]['checked_date'] = None
+        state = 'checked' if todos[idx]['checked'] else 'unchecked'
+        save_todos(todos)
+        print(f"Todo {args.id} marked as {state}")
+        if not getattr(args, 'text', None) and getattr(args, 'days', None) is None:
+            return
+
+    # If text was provided, update it; otherwise leave as-is.
+    if getattr(args, 'text', None):
+        todos[idx]['text'] = args.text
     if getattr(args, 'days', None) is not None:
         todos[idx]['days'] = parse_days_arg(args.days)
     save_todos(todos)
-    print(f'Updated {args.id}: {args.text}!')
+    if getattr(args, 'text', None):
+        print(f'Updated {args.id}: {args.text}!')
 
 
 def remove_cmd(args):
@@ -308,6 +336,7 @@ def scheduled_cmd(args):
     day_labels = []
     for t in scheduled_sorted:
         marker = ' [!]' if t.get('urgent') else ''
+        # check marker is handled by display to ensure ordering: [!] [Day] [✔]
         days_raw = [d.lower() for d in t.get('days', [])]
         days_sorted = sorted(days_raw, key=lambda x: week_order.index(x) if x in week_order else 7)
         labels = [d[:3].title() for d in days_sorted]
@@ -369,7 +398,7 @@ def main():
         args.text = ' '.join(args.text)
         add_cmd(args)
     elif args.cmd == 'update':
-        args.text = ' '.join(args.text)
+        args.text = ' '.join(args.text) if getattr(args, 'text', None) else None
         update_cmd(args)
     elif args.cmd == 'remove':
         remove_cmd(args)
@@ -386,5 +415,3 @@ def main():
 
 
 __all__ = ['main']
-
-__version__ = '0.2.0'

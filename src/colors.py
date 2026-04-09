@@ -126,6 +126,7 @@ def load_style():
         'RST': '\033[0m',
         'CYN': '\033[1;36m',
         'YEL': '\033[93m',
+        'GRN': '\033[92m',
         'RED': '\033[91m',
         'styled': True,
     }

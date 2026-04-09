@@ -16,7 +16,9 @@ def parse_args():
 
     pu = sub.add_parser('update', aliases=['u'], prog='todo update', help='Update a todo by id or text')
     pu.add_argument('id', help='Todo id (from list) or text fragment')
-    pu.add_argument('text', nargs='+', help='New todo text')
+    pu.add_argument('text', nargs='*', help='New todo text')
+    pu.add_argument('-check', action='store_true', dest='check', help='Mark as checked / toggle checked state')
+    pu.add_argument('-uncheck', action='store_true', dest='uncheck', help='Mark as unchecked (explicit)')
     pu.add_argument('-d', '--days', help='Comma-separated days (Mon,Tue or monday)')
 
     pr = sub.add_parser('remove', aliases=['r'], prog='todo remove', help='Remove a todo by id or text')
