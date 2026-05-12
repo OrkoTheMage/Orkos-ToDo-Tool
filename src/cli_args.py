@@ -25,6 +25,10 @@ def parse_args():
     pr = sub.add_parser('remove', aliases=['r'], prog='todo remove', help='Remove a todo by id or text')
     pr.add_argument('id', help='Todo id (from list) or text fragment')
 
+    pmo = sub.add_parser('reorder', aliases=['mo'], prog='todo reorder', help='Move a todo to a new position')
+    pmo.add_argument('id', help='Todo id (1-based) or text fragment')
+    pmo.add_argument('position', type=int, help='New 1-based position')
+
     pur = sub.add_parser('urgent', prog='todo urgent', help='Toggle urgent flag on a todo')
     pur.add_argument('id', help='Todo id (from list) or text fragment')
 

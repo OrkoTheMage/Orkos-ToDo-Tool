@@ -5,7 +5,7 @@ import sys
 from datetime import date
 from cli_args import parse_args
 
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 from display import print_box, _prefix_and_space
 from config import config_path, load_personalization, save_personalization
@@ -251,6 +251,22 @@ def remove_cmd(args):
     print(f"Removed: {removed.get('text','')}")
 
 
+def reorder_cmd(args):
+    todos = load_todos()
+    idx = resolve_todo_identifier(args.id, todos)
+    if idx is None or idx < 0 or idx >= len(todos):
+        print(f"No matching todo for: {args.id}")
+        return
+    new_pos = args.position
+    if new_pos < 1 or new_pos > len(todos):
+        print(f"Position must be between 1 and {len(todos)}.")
+        return
+    todo = todos.pop(idx)
+    todos.insert(new_pos - 1, todo)
+    save_todos(todos)
+    print(f"Moved '{todo.get('text','')}' to position {new_pos}.")
+
+
 def urgent_cmd(args):
     todos = load_todos()
     idx = resolve_todo_identifier(args.id, todos)
@@ -441,6 +457,8 @@ def main():
         scheduled_cmd(args)
     elif args.cmd == 'id':
         id_cmd(args)
+    elif args.cmd == 'reorder':
+        reorder_cmd(args)
     elif args.cmd == 'personalize':
         personalize_cmd(args)
     else:
