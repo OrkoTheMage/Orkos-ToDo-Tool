@@ -13,7 +13,7 @@ A small, terminal-first todo list CLI with styled, readable output. Designed for
 Features
 --------
 
-- Fast CLI: `list`, `add`, `update`, `remove`, `urgent`, `scheduled`, `id`, and `personalize` commands.
+- Fast CLI: `list`, `add`, `update`, `remove`, `urgent`, `reorder`, `scheduled`, `id`, and `personalize` commands.
 - Toggle completion from the CLI: use `-check <id>` and `-uncheck <id>` to mark items checked/unchecked.
 - Day-filtered scheduled view and stable ordering: `todo scheduled <day>` (e.g. `todo scheduled Mon`) shows only that day's scheduled items in a consistent, sorted order.
 - Styled terminal output with configurable colors and accenting for urgent/scheduled items.
@@ -148,6 +148,10 @@ todo id 3
 # Mark a todo checked / unchecked by id
 todo -check 2
 todo -uncheck 2
+
+# Reorder a todo — move it to a new 1-based position
+todo reorder 3 1        # move item 3 to the top
+todo reorder 1 4        # move item 1 to position 4
 
 # Clear todos (no arg clears all non-urgent/non-scheduled; scopes: unflagged, urgent, scheduled)
 todo clear
